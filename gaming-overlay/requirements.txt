@@ -1,0 +1,16 @@
+# Core
+anthropic>=0.40.0
+PySide6>=6.7.0
+mss>=9.0.1
+Pillow>=10.3.0
+numpy>=1.26.0
+
+# Hotkey
+pynput>=1.7.7
+
+# Optional: voice output (TTS)
+# Remove the '#' below to enable voice
+# pyttsx3>=2.90
+
+# For building a standalone .exe
+pyinstaller>=6.6.0

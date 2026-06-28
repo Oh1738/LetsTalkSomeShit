@@ -1,0 +1,12 @@
+{
+  "monitor_index": 1,
+  "model": "claude-haiku-4-5-20251001",
+  "change_threshold": 18.0,
+  "poll_interval_seconds": 5.0,
+  "min_seconds_between_auto_calls": 60.0,
+  "voice_enabled": false,
+  "hotkey": "<ctrl>+<shift>+g",
+  "game_name": "Warhammer 40000: Rogue Trader",
+  "max_history_messages": 16,
+  "capture_scale": 0.25
+}
