@@ -1,5 +1,6 @@
 """
-PySide6 overlay window: frameless, translucent, always-on-top, draggable.
+PySide6 overlay window — Warhammer 40K Imperial gothic theme.
+Frameless, translucent, always-on-top, draggable.
 ALL widget updates happen in slots connected to AppSignals — never from worker threads.
 """
 import threading
@@ -10,30 +11,51 @@ from PySide6.QtWidgets import (
     QPushButton, QLineEdit, QFrame, QSizePolicy, QTextEdit,
 )
 from PySide6.QtCore import Qt, QPoint
-from PySide6.QtGui import QPainter, QColor, QFont, QPen, QBrush
+from PySide6.QtGui import QPainter, QColor, QFont, QPen, QBrush, QLinearGradient
+
+
+# ── Warhammer 40K Imperial colour palette ────────────────────────────────────
+BG           = "rgba(10, 7, 4, 235)"
+BG_INPUT     = "rgba(18, 12, 6, 220)"
+BORDER       = "#7a5c1e"          # aged brass
+BORDER_LIVE  = "#c9972a"          # bright gold — active/response state
+BORDER_ERR   = "#6b1a1a"          # dark crimson
+TEXT         = "#e8dcc8"          # parchment
+TEXT_DIM     = "#7a6a56"
+TEXT_ERR     = "#e07070"
+ACCENT       = "#c9972a"          # gold accent
+FONT_MAIN    = "'Palatino Linotype', 'Palatino', 'Book Antiqua', Georgia, serif"
+FONT_SIZE    = "14px"
 
 
 # ── Avatar ────────────────────────────────────────────────────────────────────
 
 class AvatarWidget(QWidget):
-    """Painted circle avatar — no external image files needed."""
+    """Painted imperial seal avatar."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedSize(46, 46)
+        self.setFixedSize(48, 48)
 
     def paintEvent(self, _event):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        # Background circle
-        p.setPen(QPen(QColor("#4ade80"), 2))
-        p.setBrush(QBrush(QColor("#0f172a")))
-        p.drawEllipse(2, 2, 42, 42)
-        # "AI" label
-        font = QFont("Segoe UI", 13, QFont.Weight.Bold)
+
+        # Outer ring — dark brass
+        p.setPen(QPen(QColor("#7a5c1e"), 1))
+        p.setBrush(QBrush(QColor("#0a0704")))
+        p.drawEllipse(2, 2, 44, 44)
+
+        # Inner ring — bright gold
+        p.setPen(QPen(QColor("#c9972a"), 1))
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.drawEllipse(6, 6, 36, 36)
+
+        # Aquila cross symbol
+        font = QFont("Palatino Linotype", 18, QFont.Weight.Bold)
         p.setFont(font)
-        p.setPen(QColor("#4ade80"))
-        p.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "AI")
+        p.setPen(QColor("#c9972a"))
+        p.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "✠")
 
 
 # ── Main Overlay Window ───────────────────────────────────────────────────────
@@ -65,21 +87,19 @@ class OverlayWindow(QWidget):
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.WindowStaysOnTopHint
-            | Qt.WindowType.Tool          # keeps overlay out of the taskbar
+            | Qt.WindowType.Tool
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setMinimumWidth(300)
-        self.setMaximumWidth(380)
+        self.setMinimumWidth(320)
+        self.setMaximumWidth(420)
 
-        # Default position: top-right of the primary screen
         from PySide6.QtWidgets import QApplication
         screen = QApplication.primaryScreen().availableGeometry()
-        self.move(screen.right() - 380, screen.top() + 30)
+        self.move(screen.right() - 440, screen.top() + 30)
 
     # ── UI construction ───────────────────────────────────────────────────────
 
     def _build_ui(self):
-        # Outer layout is transparent; only the inner frame is visible
         outer = QVBoxLayout(self)
         outer.setContentsMargins(6, 6, 6, 6)
         outer.setSpacing(0)
@@ -87,11 +107,11 @@ class OverlayWindow(QWidget):
         self._frame = QFrame()
         self._frame.setObjectName("main_frame")
         self._frame.setStyleSheet(
-            "QFrame#main_frame {"
-            "  background-color: rgba(13, 17, 35, 218);"
-            "  border: 1px solid #1e3a5f;"
-            "  border-radius: 12px;"
-            "}"
+            f"QFrame#main_frame {{"
+            f"  background-color: {BG};"
+            f"  border: 1px solid {BORDER};"
+            f"  border-radius: 4px;"
+            f"}}"
         )
         outer.addWidget(self._frame)
 
@@ -100,73 +120,74 @@ class OverlayWindow(QWidget):
         layout.setSpacing(8)
 
         layout.addLayout(self._build_header())
+        layout.addWidget(self._build_divider())
         layout.addWidget(self._build_bubble())
         layout.addWidget(self._build_chat_toggle())
         layout.addWidget(self._build_chat_panel())
 
     def _build_header(self) -> QHBoxLayout:
         row = QHBoxLayout()
-        row.setSpacing(6)
+        row.setSpacing(8)
 
         self._avatar = AvatarWidget()
         row.addWidget(self._avatar)
 
-        title = QLabel(f"Gaming Co-Pilot")
+        title = QLabel("IMPERIAL CO-PILOT")
         title.setStyleSheet(
-            "color: #64748b; font-size: 11px; font-family: 'Segoe UI';"
+            f"color: {ACCENT};"
+            f"font-size: 11px;"
+            f"font-family: {FONT_MAIN};"
+            f"letter-spacing: 2px;"
+            f"font-weight: bold;"
         )
         row.addWidget(title, 1)
 
         self._dot = QLabel("●")
-        self._dot.setStyleSheet("color: #4ade80; font-size: 9px; padding-right: 2px;")
+        self._dot.setStyleSheet(f"color: {ACCENT}; font-size: 9px; padding-right: 2px;")
         self._dot.setToolTip("Watching")
         row.addWidget(self._dot)
 
-        for label, slot, color in (
-            ("_",  self.showMinimized, "#64748b"),
-            ("✕",  self.close,         "#ef4444"),
+        for label, slot, hover in (
+            ("—", self.showMinimized, TEXT_DIM),
+            ("✕", self.close,         "#e07070"),
         ):
             btn = QPushButton(label)
             btn.setFixedSize(20, 20)
             btn.setStyleSheet(
-                f"QPushButton {{ color: #475569; background: transparent; border: none;"
-                f"  font-size: 11px; border-radius: 3px; }}"
-                f"QPushButton:hover {{ color: {color}; background: rgba(255,255,255,15); }}"
+                f"QPushButton {{ color: {TEXT_DIM}; background: transparent; border: none;"
+                f"  font-size: 12px; border-radius: 2px; }}"
+                f"QPushButton:hover {{ color: {hover}; background: rgba(255,255,255,10); }}"
             )
             btn.clicked.connect(slot)
             row.addWidget(btn)
 
         return row
 
+    def _build_divider(self) -> QFrame:
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFixedHeight(1)
+        line.setStyleSheet(f"background-color: {BORDER}; border: none;")
+        return line
+
     def _build_bubble(self) -> QTextEdit:
         self._bubble = QTextEdit()
         self._bubble.setReadOnly(True)
-        self._bubble.setFixedHeight(150)
-        self._bubble.setPlainText("Watching your game…")
+        self._bubble.setFixedHeight(180)
+        self._bubble.setPlainText("FOR THE EMPEROR.\n\nWatching your screen…")
         self._bubble.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-        self._bubble.setStyleSheet(
-            "QTextEdit {"
-            "  color: #e2e8f0;"
-            "  background-color: rgba(8, 12, 28, 200);"
-            "  border: 1px solid #2d4a6e;"
-            "  border-radius: 8px;"
-            "  padding: 7px 9px;"
-            "  font-family: 'Segoe UI', sans-serif;"
-            "  font-size: 12px;"
-            "  line-height: 1.4;"
-            "}"
-            "QScrollBar:vertical { width: 0px; }"
-        )
+        self._bubble.setStyleSheet(self._bubble_style(BORDER))
         return self._bubble
 
     def _build_chat_toggle(self) -> QPushButton:
-        self._toggle_btn = QPushButton("▼  Chat")
+        self._toggle_btn = QPushButton("▼  Vox Channel")
         self._toggle_btn.setStyleSheet(
-            "QPushButton { color: #475569; background: transparent; border: none;"
-            "  font-size: 10px; text-align: left; padding: 0px 2px; }"
-            "QPushButton:hover { color: #94a3b8; }"
+            f"QPushButton {{ color: {TEXT_DIM}; background: transparent; border: none;"
+            f"  font-size: 10px; font-family: {FONT_MAIN}; letter-spacing: 1px;"
+            f"  text-align: left; padding: 0px 2px; }}"
+            f"QPushButton:hover {{ color: {ACCENT}; }}"
         )
         self._toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._toggle_btn.clicked.connect(self._toggle_chat)
@@ -179,35 +200,34 @@ class OverlayWindow(QWidget):
         row.setSpacing(5)
 
         self._input = QLineEdit()
-        self._input.setPlaceholderText("Ask anything about the game…")
+        self._input.setPlaceholderText("Speak, Rogue Trader…")
         self._input.setStyleSheet(
-            "QLineEdit {"
-            "  background-color: rgba(8, 12, 28, 200);"
-            "  color: #e2e8f0;"
-            "  border: 1px solid #2d4a6e;"
-            "  border-radius: 6px;"
-            "  padding: 5px 8px;"
-            "  font-family: 'Segoe UI', sans-serif;"
-            "  font-size: 12px;"
-            "}"
-            "QLineEdit:focus { border-color: #4ade80; }"
+            f"QLineEdit {{"
+            f"  background-color: {BG_INPUT};"
+            f"  color: {TEXT};"
+            f"  border: 1px solid {BORDER};"
+            f"  border-radius: 3px;"
+            f"  padding: 6px 10px;"
+            f"  font-family: {FONT_MAIN};"
+            f"  font-size: {FONT_SIZE};"
+            f"}}"
+            f"QLineEdit:focus {{ border-color: {ACCENT}; }}"
         )
         self._input.returnPressed.connect(self._send)
         row.addWidget(self._input, 1)
 
-        send_btn = QPushButton("→")
-        send_btn.setFixedSize(30, 30)
+        send_btn = QPushButton("⚔")
+        send_btn.setFixedSize(34, 34)
         send_btn.setStyleSheet(
-            "QPushButton {"
-            "  background-color: #1a6b3c;"
-            "  color: #4ade80;"
-            "  border: 1px solid #4ade80;"
-            "  border-radius: 6px;"
-            "  font-size: 14px;"
-            "  font-weight: bold;"
-            "}"
-            "QPushButton:hover { background-color: #22543d; }"
-            "QPushButton:pressed { background-color: #166534; }"
+            f"QPushButton {{"
+            f"  background-color: rgba(30, 20, 5, 200);"
+            f"  color: {ACCENT};"
+            f"  border: 1px solid {BORDER};"
+            f"  border-radius: 3px;"
+            f"  font-size: 16px;"
+            f"}}"
+            f"QPushButton:hover {{ border-color: {ACCENT}; background: rgba(60, 40, 10, 200); }}"
+            f"QPushButton:pressed {{ background: rgba(20, 13, 3, 200); }}"
         )
         send_btn.clicked.connect(self._send)
         row.addWidget(send_btn)
@@ -222,21 +242,10 @@ class OverlayWindow(QWidget):
         self._signals.thinking_start.connect(self._on_thinking_start)
         self._signals.thinking_stop.connect(self._on_thinking_stop)
 
-    # ── slots (always called in main Qt thread) ────────────────────────────────
+    # ── slots ──────────────────────────────────────────────────────────────────
 
     def _on_message(self, text: str):
-        self._bubble.setStyleSheet(
-            "QTextEdit {"
-            "  color: #e2e8f0;"
-            "  background-color: rgba(8, 12, 28, 200);"
-            "  border: 1px solid #4ade80;"
-            "  border-radius: 8px;"
-            "  padding: 7px 9px;"
-            "  font-family: 'Segoe UI', sans-serif;"
-            "  font-size: 12px;"
-            "}"
-            "QScrollBar:vertical { width: 0px; }"
-        )
+        self._bubble.setStyleSheet(self._bubble_style(BORDER_LIVE))
         self._bubble.setPlainText(text)
         self._bubble.verticalScrollBar().setValue(0)
 
@@ -245,26 +254,15 @@ class OverlayWindow(QWidget):
             threading.Thread(target=speak, args=(text,), daemon=True).start()
 
     def _on_error(self, text: str):
-        self._bubble.setStyleSheet(
-            "QTextEdit {"
-            "  color: #fca5a5;"
-            "  background-color: rgba(28, 8, 8, 200);"
-            "  border: 1px solid #ef4444;"
-            "  border-radius: 8px;"
-            "  padding: 7px 9px;"
-            "  font-family: 'Segoe UI', sans-serif;"
-            "  font-size: 12px;"
-            "}"
-            "QScrollBar:vertical { width: 0px; }"
-        )
+        self._bubble.setStyleSheet(self._bubble_style(BORDER_ERR, TEXT_ERR))
         self._bubble.setPlainText(text)
 
     def _on_thinking_start(self):
-        self._dot.setStyleSheet("color: #f59e0b; font-size: 9px; padding-right: 2px;")
-        self._dot.setToolTip("Thinking…")
+        self._dot.setStyleSheet("color: #c9972a; font-size: 9px; padding-right: 2px;")
+        self._dot.setToolTip("Consulting the cogitators…")
 
     def _on_thinking_stop(self):
-        self._dot.setStyleSheet("color: #4ade80; font-size: 9px; padding-right: 2px;")
+        self._dot.setStyleSheet(f"color: {ACCENT}; font-size: 9px; padding-right: 2px;")
         self._dot.setToolTip("Watching")
 
     # ── chat ──────────────────────────────────────────────────────────────────
@@ -274,7 +272,8 @@ class OverlayWindow(QWidget):
         if not text:
             return
         self._input.clear()
-        self._bubble.setPlainText(f"You: {text}\n\n⏳ Thinking…")
+        self._bubble.setStyleSheet(self._bubble_style(BORDER))
+        self._bubble.setPlainText(f"You: {text}\n\n⏳ Consulting the archives…")
         b64 = None
         try:
             b64 = self._capture_fn()
@@ -285,10 +284,12 @@ class OverlayWindow(QWidget):
     def _toggle_chat(self):
         self._chat_visible = not self._chat_visible
         self._chat_panel.setVisible(self._chat_visible)
-        self._toggle_btn.setText("▼  Chat" if self._chat_visible else "▶  Chat")
+        self._toggle_btn.setText(
+            "▼  Vox Channel" if self._chat_visible else "▶  Vox Channel"
+        )
         self.adjustSize()
 
-    # ── drag support ──────────────────────────────────────────────────────────
+    # ── drag ──────────────────────────────────────────────────────────────────
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -308,10 +309,26 @@ class OverlayWindow(QWidget):
     # ── public ────────────────────────────────────────────────────────────────
 
     def toggle_visibility(self):
-        """Toggle called from hotkey (safe to call from any thread via Qt's queued connection)."""
         if self.isVisible():
             self.hide()
         else:
             self.show()
             self.raise_()
             self.activateWindow()
+
+    # ── helpers ───────────────────────────────────────────────────────────────
+
+    def _bubble_style(self, border_color: str, text_color: str = TEXT) -> str:
+        return (
+            f"QTextEdit {{"
+            f"  color: {text_color};"
+            f"  background-color: {BG_INPUT};"
+            f"  border: 1px solid {border_color};"
+            f"  border-radius: 3px;"
+            f"  padding: 8px 10px;"
+            f"  font-family: {FONT_MAIN};"
+            f"  font-size: {FONT_SIZE};"
+            f"  line-height: 1.5;"
+            f"}}"
+            f"QScrollBar:vertical {{ width: 0px; }}"
+        )
