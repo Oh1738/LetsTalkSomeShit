@@ -1,27 +1,26 @@
 @echo off
 title Gaming Co-Pilot Overlay
-echo.
-echo  ========================================
-echo   Gaming Co-Pilot Overlay — starting...
-echo  ========================================
-echo.
 
-:: Check that Python is available
-python --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo  ERROR: Python not found.
-    echo  Install Python 3.11+ from https://python.org and add it to PATH.
+:: Use the venv Python directly — no activation needed
+set PYTHON="%~dp0.venv\Scripts\python.exe"
+
+if not exist %PYTHON% (
+    echo ERROR: Virtual environment not found.
+    echo Please run these commands once in PowerShell:
+    echo   cd "%~dp0"
+    echo   python -m venv .venv
+    echo   .\.venv\Scripts\Activate.ps1
+    echo   pip install -r requirements.txt
     pause
     exit /b 1
 )
 
-:: Check that the API key is set
 if "%ANTHROPIC_API_KEY%"=="" (
-    echo  WARNING: ANTHROPIC_API_KEY is not set in this session.
-    echo  The overlay will show an error bubble when it starts.
-    echo  Fix: run  setx ANTHROPIC_API_KEY "sk-ant-..."  then reopen this window.
+    echo WARNING: ANTHROPIC_API_KEY is not set.
+    echo Run this in PowerShell: setx ANTHROPIC_API_KEY "sk-ant-..."
+    echo Then reopen this window.
     echo.
 )
 
-python "%~dp0main.py"
+%PYTHON% "%~dp0main.py"
 pause
